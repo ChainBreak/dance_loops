@@ -5,12 +5,13 @@ import numpy as np
 
 from webcam_interface import WebcamInterface as Camera
 from danceloopdetector import DanceLoopDetector
+from danceloop import DanceLoop
 
 p = {
     "beats_per_loop": 2,
-    "beats_per_minute": 120,
-    "frames_per_second": 25,
-    "dance_threshold":0.5,
+    "beats_per_minute": 130,
+    "frames_per_second": 24,
+    "dance_threshold":0.4,
     "dance_detection_cooldown_time":5, #seconds
 
 }
@@ -21,25 +22,39 @@ print(p)
 
 camera = Camera()
 
-def dance_detector_callback():
-    pass
+dance_loop = DanceLoop()
+def dance_detector_callback(new_dance_loop):
+    global dance_loop
+    dance_loop = new_dance_loop
 
 dance_loop_detector = DanceLoopDetector(dance_detector_callback,p)
 
+cv2.namedWindow("loop",0)
+# cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 frame_i = 0
+
 while True:
     frame_i += 1
     frame = camera.read()
 
-    correlation_ratio = dance_loop_detector(frame)
+    dance_loop_detector(frame)
 
-
-    tempo_img = np.zeros((100,400,3),dtype="uint8")
-    x = int( math.sin(frame_i/p["frames_per_loop"]*2*math.pi) * 180 + 200 )
-    cv2.rectangle(tempo_img,(0,0),(int(400* correlation_ratio),50),(255,0,0),-1)
-    cv2.rectangle(tempo_img,(x-10,50),(x+10,100),(255,0,0),-1)
-    cv2.imshow("tempo",tempo_img)
 
     cv2.imshow("camera",frame)
+
+   
+    l = p["frames_per_loop"]*2
+    i = min(frame_i % l, l - (frame_i % l)-1)
+
+    ratio = i / p["frames_per_loop"]
+
+    play_frame = dance_loop.get_frame(ratio,width = 640, height = 480)
+
+    cv2.imshow("loop",play_frame)
+
+
+
+
+
     cv2.waitKey(1)
