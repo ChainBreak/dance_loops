@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     
     delay_queue = queue.Queue()
-    period = 30
+    period = 25
     for i in range(period):
         delay_queue.put(0.0)
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     diff_highpass = 0.0
     diff_ratio_last = None
 
-    for frame_i in range(1200):
+    for frame_i in range(500):
         ret,frame_raw = cam.read()
         
         frame = cv2.cvtColor(frame_raw,cv2.COLOR_BGR2GRAY)
@@ -53,22 +53,24 @@ if __name__ == "__main__":
         
 
         if last_frame is not None:
-            diff = np.abs(frame - last_frame).astype("uint8")
+            diff = np.abs(frame - last_frame).astype("uint8")>20
             cv2.imshow("diff",diff)
 
             h,w = diff.shape
             diff_sum = float(diff.sum())
             diff_ratio = diff_sum / h/w/255.0
+            plot("diff_ratio",diff_ratio)
 
             #highpass filter the diff_ration
             if diff_ratio_last is None: diff_ratio_last = diff_ratio
-            diff_highpass = 0.8 * ( diff_highpass + diff_ratio - diff_ratio_last )
+            diff_highpass = 0.5 * ( diff_highpass + diff_ratio - diff_ratio_last )
             diff_ratio_last = diff_ratio
-            # plot("diff_highpass",diff_highpass)
+            plot("diff_highpass",diff_highpass)
 
             delay_queue.put(diff_highpass)
 
             delayed_diff = delay_queue.get()
+            plot("delayed_diff",delayed_diff)
             autocorrelation = diff_highpass * delayed_diff
 
             auto_cor_array = np.roll(auto_cor_array,1)
@@ -85,8 +87,8 @@ if __name__ == "__main__":
 
             correlation_ratio = auto_cor_sum/(max_auto_cor_sum+10e-6)
             smooth_cor_ratio += autocorrelation_smooth * ( correlation_ratio - smooth_cor_ratio)
-            plot("correlation_ratio",correlation_ratio)
-            plot("smooth_cor_ratio",smooth_cor_ratio)
+            # plot("correlation_ratio",correlation_ratio)
+            # plot("smooth_cor_ratio",smooth_cor_ratio)
             cv2.rectangle(frame_raw,(0,0),(int(640* correlation_ratio),20),(255,0,0),-1)
             
             tempo_img = np.zeros((100,400,3),dtype="uint8")
