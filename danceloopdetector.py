@@ -7,6 +7,7 @@ import time
 from matplotlib import pyplot as plt
 from collections import deque
 from filters import HighPass
+from danceloop import DanceLoop
 
 class DanceLoopDetector():
     """This class can be called for every frame from a camera and it will return a boolean indicating if someone is dancing"""
@@ -39,7 +40,7 @@ class DanceLoopDetector():
         self.cooldown_time = p["dance_detection_cooldown_time"]
 
         #TODO calculate high pass value from frame rate and beats per minute
-        self.diff_high_pass = HighPass(0.5)
+        self.diff_high_pass = HighPass(0.95)
 
     def calc_motion_ratio(self,frame):
         """Calculate the ratio of how much the image has changed since the last image"""
@@ -128,43 +129,35 @@ class DanceLoopDetector():
     def extract_loop_from_buffer(self):
         #given dancing has been detected, lets slice out a nice loop from the buffer
 
+        #convert the buffer deque to a list
         buffer_list = list(self.window_buffer)
 
+        #convert the list of tuples to a tuple of lists. we only need frames and motions
         frame_list, motion_list,_,_ = zip(*buffer_list)
 
-        
-
+        #initialise sum variables to help find the frame with the least motion
         smallest_motion = motion_list[0]
         smallest_i = 0
 
+        #the frame with the smallest motion should be the frame where the dance is at the start of a move
         #find the frame with the smallest motion
         for i,motion in enumerate(motion_list[:-self.frames_per_loop]):
+
+            #if the motion is smaller then update the smallest
             if motion < smallest_motion:
                 smallest_i = i
                 smallest_motion = motion
 
-        print(smallest_i,smallest_motion)
+     
+        #starting at the frame with the smallest motion, slice out a chuck of video the length of the loop
+        i1 = smallest_i
+        i2 = smallest_i+self.frames_per_loop
+        loop_frames = list(frame_list[i1:i2])
 
-        plt.plot(motion_list)
-        
+        #construct a dance loop object to wrap these frames
+        dance_loop = DanceLoop(loop_frames)
 
-        loop_frames = list(frame_list[smallest_i:(smallest_i+int(self.frames_per_loop) )])
-
-        plt.figure()
-        for i,frame in enumerate(loop_frames):
-            plt.subplot(5,5,i+1)
-            plt.imshow(frame)
-            plt.title( "frame %i"%i )
-
-        plt.show()
-
-        for i in range(10):
-            for frame in loop_frames:
-                cv2.imshow("loop",frame)
-                cv2.waitKey(int(40))
-
-            loop_frames.reverse()
-
+        self.dance_detection_callback(dance_loop)
 
 
     def __call__(self,frame):
@@ -186,7 +179,7 @@ class DanceLoopDetector():
             #reset cooldown timer
             self.last_detect_time = time.time()
 
-        return self.correlation_ratio
+        return self.correlation_ratio / self.dance_threshold
         
         
         
