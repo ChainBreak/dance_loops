@@ -154,10 +154,8 @@ class DanceLoopDetector():
         i2 = smallest_i+self.frames_per_loop
         loop_frames = list(frame_list[i1:i2])
 
-        #construct a dance loop object to wrap these frames
-        dance_loop = DanceLoop(loop_frames)
-
-        self.dance_detection_callback(dance_loop)
+        return loop_frames
+        
 
 
     def __call__(self,frame):
@@ -169,17 +167,18 @@ class DanceLoopDetector():
         cooldown_ended = time.time()-self.last_detect_time > self.cooldown_time
 
         #if dance frequence detected and cooldown ended then trigger a new dance
-        if self.correlation_ratio > self.dance_threshold:
-            
-
-            if cooldown_ended:
-                print("\n\n\nDance detected")
-                self.extract_loop_from_buffer()
-
+        if self.correlation_ratio > self.dance_threshold and cooldown_ended:
             #reset cooldown timer
             self.last_detect_time = time.time()
 
-        return self.correlation_ratio / self.dance_threshold
+            loop_frames = self.extract_loop_from_buffer()
+
+            #construct a dance loop object to wrap these frames
+            dance_loop = DanceLoop(loop_frames)
+
+            self.dance_detection_callback(dance_loop)
+
+
         
         
         

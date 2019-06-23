@@ -54,7 +54,4 @@ while True:
     cv2.imshow("loop",play_frame)
 
 
-
-
-
     cv2.waitKey(1)
