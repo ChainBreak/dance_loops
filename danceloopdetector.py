@@ -65,7 +65,7 @@ class DanceLoopDetector():
         max_sum = h*w*c*255
 
         #calculate the ratio of the amount of change
-        diff_ratio = diff_sum #/ max_sum
+        diff_ratio = diff_sum / max_sum
 
         #is effectively the ratio of the image that contained motion
         return diff_ratio
