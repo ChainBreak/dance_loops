@@ -12,7 +12,7 @@ for i in range(l):
     frame = np.ones((h,w,3),dtype="uint8")*128
     x = int(w/2 - w/3*math.cos(i/l*math.pi*2))
     cv2.line(frame,(x,0),(w//2,h//2),(50,50,50),20)
-    cv2.line(frame,(x,h),(w//2,h//2),(50,50,50),20)
+    # cv2.line(frame,(x,h),(w//2,h//2),(50,50,50),20)
     
     placeholder_frame_list.append(frame)
 

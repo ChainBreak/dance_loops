@@ -54,4 +54,12 @@ class GridPlayer():
 
                 frame[i1:i2,j1:j2,:] = self.dance_loop_deque[li].get_frame(loop_ratio, width=self.view_w, height=self.view_h)
 
+        for i in range(self.grid_h):
+            y = i * self.view_h
+            cv2.line(frame,(0,y), (self.frame_w,y),(0,0,0),10)
+
+        for j in range(self.grid_w):
+            x = j * self.view_w
+            cv2.line(frame,(x,0), (x,self.frame_h),(0,0,0),10)
+
         return frame

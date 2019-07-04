@@ -42,7 +42,7 @@ class DanceLoopDetector():
         self.cooldown_time = p["dance_detection_cooldown_time"]
 
         #TODO calculate high pass value from frame rate and beats per minute
-        self.diff_high_pass = HighPass(0.8)
+        self.diff_high_pass = HighPass(p["motion_high_pass"])
 
     def calc_motion_ratio(self,frame):
         """Calculate the ratio of how much the image has changed since the last image"""
