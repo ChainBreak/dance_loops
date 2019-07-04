@@ -13,6 +13,7 @@ p = {
     "beats_per_minute": 130,
     "frames_per_second": 30,
     "dance_threshold":0.3,
+    "motion_threshold":1.0/100.0, #1 percent
     "dance_detection_cooldown_time":5, #seconds
 
 }

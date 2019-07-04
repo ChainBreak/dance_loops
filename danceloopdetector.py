@@ -19,6 +19,8 @@ class DanceLoopDetector():
 
         self.dance_threshold = p["dance_threshold"]
 
+        self.motion_threshold = p["motion_threshold"]
+
         self.frames_per_loop = p["frames_per_loop"] 
 
         #number of frames to lag/delay for auto correlation
@@ -40,7 +42,7 @@ class DanceLoopDetector():
         self.cooldown_time = p["dance_detection_cooldown_time"]
 
         #TODO calculate high pass value from frame rate and beats per minute
-        self.diff_high_pass = HighPass(0.95)
+        self.diff_high_pass = HighPass(0.8)
 
     def calc_motion_ratio(self,frame):
         """Calculate the ratio of how much the image has changed since the last image"""
@@ -97,17 +99,21 @@ class DanceLoopDetector():
         # 1 = full motion, every pixel has changed by full brightness
         motion = self.calc_motion_ratio(frame)
 
+        motion_detected = motion > self.motion_threshold
+
         #Apply high pass filter to get the relative motion as a zero centered signal
         motion = self.diff_high_pass(motion)
 
         #How much does this frame correlate with a frame 1 period/beat ago
         lagged_product,max_lagged_product = self.calc_lagged_product(motion)
 
+        lagged_product *= motion_detected
+
         #Append the info from this frame to the window buffer
         self.window_buffer.append( (frame, motion, lagged_product, max_lagged_product) )
 
         #add these lagged products to their moving sums
-        self.correlation_sum += lagged_product
+        self.correlation_sum += lagged_product 
         self.max_correlation_sum += max_lagged_product
 
         #if the buffer is not full enough then return 0.0
@@ -159,6 +165,8 @@ class DanceLoopDetector():
 
 
     def __call__(self,frame):
+
+               
 
         #Use auto correlation to see if the dance frequency is in the video
         self.correlation_ratio = self.calc_moving_auto_correlation_ratio(frame)
