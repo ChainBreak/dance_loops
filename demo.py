@@ -56,8 +56,8 @@ while True:
 
     t3 = time.time()
     
-
-    # cv2.imshow("camera",frame)
+    if frame is not None:
+        cv2.imshow("camera",frame)
     play_frame = grid_player.get_frame()
     cv2.imshow("loop",play_frame)
 

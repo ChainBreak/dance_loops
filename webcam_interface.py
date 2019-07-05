@@ -7,17 +7,11 @@ class WebcamInterface():
 
     def __init__(self):
 
-        self.frame = None
+        self.camera_ready = True
 
-        self.camera_thread = threading.Thread(name="Camera Thread",target=self.camera_loop,daemon=True)
 
-        self.lock = threading.Lock()
 
-        self.lock.acquire()
-
-        self.camera_thread.start()
-
-    def camera_loop(self):
+    def connect_to_a_camera(self):
         camera_index = 0
 
         while True:
@@ -25,27 +19,44 @@ class WebcamInterface():
                 camera_index = camera_index%10
                 print(camera_index)
 
-                cap = cv2.VideoCapture(camera_index)
-                cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc('M','J','P','G'))
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # .25 manual, .75 auto , Who knows why
-                cap.set(cv2.CAP_PROP_EXPOSURE, 0.015501550155015502)
+                self.cap = cv2.VideoCapture(camera_index)
+                self.cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc('M','J','P','G'))
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # .25 manual, .75 auto , Who knows why
+                self.cap.set(cv2.CAP_PROP_EXPOSURE, 0.015501550155015502)
+                
+                ret,frame = self.cap.read()
+                
+                if frame is not None:
+                    self.camera_ready = True
+                    return
 
-                while True:
-                    ret,frame = cap.read()
-
-                    if ret:
-                        self.frame = frame
-      
-                    else:
-                        break
                 camera_index += 1
             except Exception as e:
                 print(e)
 
 
     def read(self):
+        frame = None
+        if self.camera_ready:
+            try:
+                ret,frame = self.cap.read()
+            except:
+                pass
+
+            if frame is None:
+                self.camera_ready = False
+                connect_thread = threading.Thread(name="Camera Thread",target=self.connect_to_a_camera,daemon=True)
+                connect_thread.start()
+
+        else:
+            time.sleep(1/30)
+
+        return frame
+
+
+
         while self.frame is None:
             time.sleep(0.1)
             
