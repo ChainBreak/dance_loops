@@ -13,7 +13,7 @@ p = {
     "beats_per_minute": 130,
     "frames_per_second": 30,
     "motion_high_pass":0.95,
-    "dance_threshold":0.3,
+    "dance_threshold":0.8,
     "motion_threshold":1.0/100.0, #1 percent
     "dance_detection_cooldown_time":5, #seconds
 
@@ -57,7 +57,7 @@ while True:
     t3 = time.time()
     
 
-    cv2.imshow("camera",frame)
+    # cv2.imshow("camera",frame)
     play_frame = grid_player.get_frame()
     cv2.imshow("loop",play_frame)
 
@@ -66,6 +66,7 @@ while True:
     next_frame_time = time.time() + 1./fps
     
     cv2.waitKey(1)
+    t4 = time.time()
 
     
     

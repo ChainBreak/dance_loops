@@ -53,7 +53,7 @@ if __name__ == "__main__":
         
 
         if last_frame is not None:
-            diff = np.abs(frame - last_frame).astype("uint8")>20
+            diff = np.abs(frame - last_frame).astype("uint8")
             cv2.imshow("diff",diff)
 
             h,w = diff.shape
