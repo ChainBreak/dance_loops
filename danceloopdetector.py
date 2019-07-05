@@ -6,7 +6,6 @@ import math
 import time
 from matplotlib import pyplot as plt
 from collections import deque
-from filters import HighPass
 from danceloop import DanceLoop
 
 class DanceLoopDetector():
@@ -19,30 +18,28 @@ class DanceLoopDetector():
 
         self.dance_threshold = p["dance_threshold"]
 
-        self.motion_threshold = p["motion_threshold"]
-
         self.frames_per_loop = p["frames_per_loop"] 
 
         #number of frames to lag/delay for auto correlation
-        self.lag_length = p["frames_per_loop"] 
+        self.lag = p["frames_per_loop"] 
 
-        self.lag_buffer = deque()
+        self.window_length = p["frames_per_loop"] * 2
 
-        self.window_length = p["frames_per_loop"] * 3
+        self.window_buffer = deque(maxlen=self.window_length)
 
-        self.window_buffer = deque()
-
-        self.correlation_sum = 0.0
-
-        self.max_correlation_sum = 0.0
+        self.auto_cor_buffer = np.zeros(self.window_length)
 
         self.last_frame = None
 
         self.last_detect_time = time.time()
         self.cooldown_time = p["dance_detection_cooldown_time"]
 
-        #TODO calculate high pass value from frame rate and beats per minute
-        self.diff_high_pass = HighPass(p["motion_high_pass"])
+        self.plot_dict = {}
+
+    def plot(self,label,value):
+        # self.plot_dict[label] = self.plot_dict.get(label,[])
+        # self.plot_dict[label].append(value)
+        pass
 
     def calc_motion_ratio(self,frame):
         """Calculate the ratio of how much the image has changed since the last image"""
@@ -92,45 +89,37 @@ class DanceLoopDetector():
 
         return lagged_product,max_lagged_product
 
-    def calc_moving_auto_correlation_ratio(self, frame):
+    def calc_auto_correlation(self, frame):
         
         #calculate how much motion is in the image
         # 0 = no motion, nothing in the image has changed
         # 1 = full motion, every pixel has changed by full brightness
         motion = self.calc_motion_ratio(frame)
 
-        motion_detected = motion > self.motion_threshold
-
-        #Apply high pass filter to get the relative motion as a zero centered signal
-        motion = self.diff_high_pass(motion)
-
-        #How much does this frame correlate with a frame 1 period/beat ago
-        lagged_product,max_lagged_product = self.calc_lagged_product(motion)
-
-        lagged_product *= motion_detected
+        # self.plot("motion",motion)
 
         #Append the info from this frame to the window buffer
-        self.window_buffer.append( (frame, motion, lagged_product, max_lagged_product) )
+        self.window_buffer.append( (frame, motion) )
 
-        #add these lagged products to their moving sums
-        self.correlation_sum += lagged_product 
-        self.max_correlation_sum += max_lagged_product
+        #roll the motion buffer around by 1 step
+        self.auto_cor_buffer = np.roll(self.auto_cor_buffer,1)
 
-        #if the buffer is not full enough then return 0.0
-        if len(self.window_buffer) <= self.window_length:
-            return 0.0
+        #replace the oldest motion with the latest motion
+        self.auto_cor_buffer[0] = motion
 
-        #get the oldest frame info from the buffer
-        _, _, oldest_lagged_product, oldest_max_lagged_product = self.window_buffer.popleft()
+        #subtract the mean from the buffer so the signal is zero centered
+        X = self.auto_cor_buffer - self.auto_cor_buffer.mean()
 
-        #subtract the oldest frame lagged products from the moving sums
-        self.correlation_sum -= oldest_lagged_product
-        self.max_correlation_sum -= oldest_max_lagged_product
+        #roll the buffer by the lag amount
+        X_lagged = np.roll(X,self.lag)
 
-        #calculate the correlation ratio
-        self.correlation_ratio = self.correlation_sum / (self.max_correlation_sum + self.window_length*10e-6)
+        #correlate the signal with its lagged version
+        correlation = np.sum(X*X_lagged) / max(np.sum(X**2),10e-6)
 
-        return self.correlation_ratio
+
+        # self.plot("correlation",correlation)
+       
+        return correlation
 
     def extract_loop_from_buffer(self):
         #given dancing has been detected, lets slice out a nice loop from the buffer
@@ -139,7 +128,7 @@ class DanceLoopDetector():
         buffer_list = list(self.window_buffer)
 
         #convert the list of tuples to a tuple of lists. we only need frames and motions
-        frame_list, motion_list,_,_ = zip(*buffer_list)
+        frame_list, motion_list = zip(*buffer_list)
 
         #initialise sum variables to help find the frame with the least motion
         smallest_motion = motion_list[0]
@@ -154,7 +143,6 @@ class DanceLoopDetector():
                 smallest_i = i
                 smallest_motion = motion
 
-     
         #starting at the frame with the smallest motion, slice out a chuck of video the length of the loop
         i1 = smallest_i
         i2 = smallest_i+self.frames_per_loop
@@ -162,20 +150,20 @@ class DanceLoopDetector():
 
         return loop_frames
         
-
-
     def __call__(self,frame):
 
+        if frame is None:
+            return
                
 
         #Use auto correlation to see if the dance frequency is in the video
-        self.correlation_ratio = self.calc_moving_auto_correlation_ratio(frame)
+        self.correlation = self.calc_auto_correlation(frame)
         
         #there is a x second cooldown after every dance is detected
         cooldown_ended = time.time()-self.last_detect_time > self.cooldown_time
 
         #if dance frequence detected and cooldown ended then trigger a new dance
-        if self.correlation_ratio > self.dance_threshold and cooldown_ended:
+        if self.correlation > self.dance_threshold and cooldown_ended:
             #reset cooldown timer
             self.last_detect_time = time.time()
 
@@ -185,6 +173,11 @@ class DanceLoopDetector():
             dance_loop = DanceLoop(loop_frames)
 
             self.dance_detection_callback(dance_loop)
+
+            # for label,data in self.plot_dict.items():
+            #     plt.plot(data,label=label)
+            # plt.legend(loc="best")
+            # plt.show()
 
 
         
