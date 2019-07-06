@@ -39,13 +39,18 @@ class WebcamInterface():
 
     def read(self):
         frame = None
+        ret = False
         if self.camera_ready:
+            t1 = time.time()
             try:
                 ret,frame = self.cap.read()
             except:
                 pass
+            t2 = time.time()
 
-            if frame is None:
+            timeout = (t2-t1) > 1.0
+
+            if frame is None or not ret or timeout:
                 self.camera_ready = False
                 connect_thread = threading.Thread(name="Camera Thread",target=self.connect_to_a_camera,daemon=True)
                 connect_thread.start()
@@ -57,8 +62,4 @@ class WebcamInterface():
 
 
 
-        while self.frame is None:
-            time.sleep(0.1)
-            
-        return self.frame
         
