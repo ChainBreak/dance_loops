@@ -16,18 +16,19 @@ class DanceLoopDetector():
         self.dance_detection_callback = dance_detection_callback
         self.p = p
 
-        self.dance_threshold = p["dance_threshold"]
+        self.dance_threshold = p["dance_correlation_threshold"]
+        self.dance_std_threshold = p["dance_std_threshold"]
 
         self.frames_per_loop = p["frames_per_loop"] 
 
         #number of frames to lag/delay for auto correlation
         self.lag = p["frames_per_loop"] 
 
-        self.window_length = p["frames_per_loop"] * 2
+        self.window_length = p["frames_per_loop"] * 4
 
-        self.window_buffer = deque(maxlen=self.window_length)
+        self.frame_buffer = deque(maxlen=self.window_length)
 
-        self.auto_cor_buffer = np.zeros(self.window_length)
+        self.motion_buffer = np.zeros(self.window_length)
 
         self.last_frame = None
 
@@ -96,19 +97,17 @@ class DanceLoopDetector():
         # 1 = full motion, every pixel has changed by full brightness
         motion = self.calc_motion_ratio(frame)
 
-        # self.plot("motion",motion)
-
-        #Append the info from this frame to the window buffer
-        self.window_buffer.append( (frame, motion) )
-
-        #roll the motion buffer around by 1 step
-        self.auto_cor_buffer = np.roll(self.auto_cor_buffer,1)
+        #Append the info from this frame to the frame buffer
+        self.frame_buffer.append(frame)
 
         #replace the oldest motion with the latest motion
-        self.auto_cor_buffer[0] = motion
+        self.motion_buffer[0] = motion
+
+        #roll the motion buffer around by 1 step
+        self.motion_buffer = np.roll(self.motion_buffer,-1)
 
         #subtract the mean from the buffer so the signal is zero centered
-        X = self.auto_cor_buffer - self.auto_cor_buffer.mean()
+        X = self.motion_buffer - self.motion_buffer.mean()
 
         #roll the buffer by the lag amount
         X_lagged = np.roll(X,self.lag)
@@ -116,37 +115,33 @@ class DanceLoopDetector():
         #correlate the signal with its lagged version
         correlation = np.sum(X*X_lagged) / max(np.sum(X**2),10e-6)
 
-
-        # self.plot("correlation",correlation)
-       
-        return correlation
+        #Only return a correlation is the signal amplitude is above a threshold
+        if self.motion_buffer.std() > self.dance_std_threshold:
+            return correlation
+        else:
+            return 0.0
 
     def extract_loop_from_buffer(self):
-        #given dancing has been detected, lets slice out a nice loop from the buffer
+        """ given dancing has been detected, lets slice out a nice loop from the buffer """
 
-        #convert the buffer deque to a list
-        buffer_list = list(self.window_buffer)
+        #Get the mean shifted signal
+        X = self.motion_buffer - self.motion_buffer.mean()
 
-        #convert the list of tuples to a tuple of lists. we only need frames and motions
-        frame_list, motion_list = zip(*buffer_list)
+        #apply a hamming windo to the signal so the ends taper to zero
+        X *= np.hamming(self.window_length)
 
-        #initialise sum variables to help find the frame with the least motion
-        smallest_motion = motion_list[0]
-        smallest_i = 0
+        #remove the points that are within one loop length of the end. Avoids taking a slice that would go out of range
+        X = X[:-self.frames_per_loop]
 
-        #the frame with the smallest motion should be the frame where the dance is at the start of a move
-        #find the frame with the smallest motion
-        for i,motion in enumerate(motion_list[:-self.frames_per_loop]):
+        #find the index of the smallest motion. This should correspond with the start of a dance move
+        smallest_i = int(np.argmin(X))
 
-            #if the motion is smaller then update the smallest
-            if motion < smallest_motion:
-                smallest_i = i
-                smallest_motion = motion
-
-        #starting at the frame with the smallest motion, slice out a chuck of video the length of the loop
+        #get the start and end index of the loop
         i1 = smallest_i
         i2 = smallest_i+self.frames_per_loop
-        loop_frames = list(frame_list[i1:i2])
+        
+        #slice out the dance loop
+        loop_frames = list(self.frame_buffer)[i1:i2]
 
         return loop_frames
         

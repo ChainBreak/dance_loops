@@ -9,23 +9,23 @@ from danceloop import DanceLoop
 from gridplayer import GridPlayer
 
 p = {
-    "beats_per_loop": 2,
-    "beats_per_minute": 130,
-    "frames_per_second": 30,
-    "motion_high_pass":0.95,
-    "dance_threshold":0.8,
-    "motion_threshold":1.0/100.0, #1 percent
+    "beats_per_loop": 2, #how many tempo beats are in a loop
+    "beats_per_minute": 130, #the tempo 
+    "frames_per_second": 30, #fps of the camera
+    "dance_correlation_threshold":0.5, #threshold for when to trigger a new dance
+    "dance_std_threshold":0.0005, 
     "dance_detection_cooldown_time":5, #seconds
 
 }
 #calculate other tempo parameters
 p["frames_per_beat"] = round(p["frames_per_second"] / p["beats_per_minute"] * 60.0) 
 p["frames_per_loop"] = round( p["beats_per_loop"] * p["frames_per_second"] / p["beats_per_minute"] * 60.0 )
-print(p)
+
 
 camera = Camera()
 
 grid_player = GridPlayer((1920,1080),(6,4),p["frames_per_loop"])
+
 def dance_detector_callback(new_dance_loop):
     grid_player.add_dance_loop(new_dance_loop)
 
@@ -33,8 +33,8 @@ def dance_detector_callback(new_dance_loop):
 
 dance_loop_detector = DanceLoopDetector(dance_detector_callback,p)
 
-# cv2.namedWindow("loop",0)
-# cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+cv2.namedWindow("loop",0)
+cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 frame_i = 0
 
@@ -72,7 +72,7 @@ while True:
     
 
 
-    print("read",(t2-t1)*1000)
-    print("detect",(t3-t2)*1000)
-    print("show",(t4-t3)*1000)
-    print("loop",(t1-t1_last)*1000)
+    # print("read",(t2-t1)*1000)
+    # print("detect",(t3-t2)*1000)
+    # print("show",(t4-t3)*1000)
+    # print("loop",(t1-t1_last)*1000)
