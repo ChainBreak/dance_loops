@@ -12,7 +12,7 @@ p = {
     "beats_per_loop": 2, #how many tempo beats are in a loop
     "beats_per_minute": 130, #the tempo 
     "frames_per_second": 30, #fps of the camera
-    "dance_correlation_threshold":0.5, #threshold for when to trigger a new dance
+    "dance_correlation_threshold":0.4, #threshold for when to trigger a new dance
     "dance_std_threshold":0.0005, 
     "dance_detection_cooldown_time":5, #seconds
 
