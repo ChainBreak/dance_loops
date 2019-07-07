@@ -6,7 +6,7 @@ import threading
 class WebcamInterface():
 
     def __init__(self):
-
+        self.cap = None
         self.camera_ready = True
 
 
@@ -21,6 +21,7 @@ class WebcamInterface():
 
                 self.cap = cv2.VideoCapture(camera_index)
                 self.cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc('M','J','P','G'))
+                self.cap.set(cv2.CAP_PROP_FPS, 30)
                 self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                 self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                 self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # .25 manual, .75 auto , Who knows why
@@ -42,10 +43,10 @@ class WebcamInterface():
         ret = False
         if self.camera_ready:
             t1 = time.time()
-            try:
+
+            if self.cap is not None:
                 ret,frame = self.cap.read()
-            except:
-                pass
+
             t2 = time.time()
 
             timeout = (t2-t1) > 1.0
