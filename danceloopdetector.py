@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 import math
 import time
-from scipy.signal import fftconvolve
 from matplotlib import pyplot as plt
 from collections import deque
 from danceloop import DanceLoop
