@@ -20,26 +20,31 @@ for i in range(l):
 
 class DanceLoop():
 
-    def __init__(self,frame_list=placeholder_frame_list):
+    def __init__(self,frame_list=[]):
         #take a local refernce of the frame list
         self.frame_list = frame_list
+        
 
         #get the length of the frame list
         self.length = len(self.frame_list)
 
         #create a new empty list of the same size to hold the resized list
         self.resized_frame_list = self.frame_list.copy()
+
+        self.frame_i = 0
+        self.frame_step = 1
     
 
-    def get_frame(self,ratio,height,width):
-        #frames are requested as a ratio of the whole sequence length.
-        #This way sequences of different lengths can be played together in synk
+    def get_frame(self,height,width):
 
-        #calculate the frame index from the ratio
-        frame_i = int(ratio * self.length)
+        if self.length <= 1:
+            frame =  np.random.randint(0,128,size=(height//4,width//4,3),dtype="uint8")
+            return cv2.resize(frame,(width,height),interpolation=cv2.INTER_NEAREST)
+            
+        #get the frame
+        frame = self.resized_frame_list[self.frame_i]
 
-        #get the frame for this ratio
-        frame = self.resized_frame_list[frame_i]
+        
 
         #check if the frame has the correct shape. Reshape it if it doesn't
         if frame.shape != (height,width,3):
@@ -62,7 +67,15 @@ class DanceLoop():
             cropped_frame = frame[h1:h2,w1:w2,:] 
 
             #resize the frame so that it is the correct size
-            self.resized_frame_list[frame_i] = frame = cv2.resize(cropped_frame,(width,height))
+            self.resized_frame_list[self.frame_i] = frame = cv2.resize(cropped_frame,(width,height))
+
+        self.frame_i += self.frame_step
+
+        if self.frame_i >= self.length-1: 
+            self.frame_step = -1
+
+        if self.frame_i <= 0: 
+            self.frame_step = 1
 
         return frame
 

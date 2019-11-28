@@ -9,22 +9,21 @@ from danceloop import DanceLoop
 from gridplayer import GridPlayer
 
 p = {
-    "beats_per_loop": 2, #how many tempo beats are in a loop
-    "beats_per_minute": 130, #the tempo 
     "frames_per_second": 30, #fps of the camera
+    "window_length_seconds": 5, #seconds
     "dance_correlation_threshold":0.4, #threshold for when to trigger a new dance
     "dance_std_threshold":0.0005, 
     "dance_detection_cooldown_time":5, #seconds
 
 }
 #calculate other tempo parameters
-p["frames_per_beat"] = round(p["frames_per_second"] / p["beats_per_minute"] * 60.0) 
-p["frames_per_loop"] = round( p["beats_per_loop"] * p["frames_per_second"] / p["beats_per_minute"] * 60.0 )
+p["window_length_frames"] = round(p["window_length_seconds"] * p["frames_per_second"]) 
+
 
 
 camera = Camera()
 
-grid_player = GridPlayer((1920,1080),(6,4),p["frames_per_loop"])
+grid_player = GridPlayer((1920,1080),(6,4))
 
 def dance_detector_callback(new_dance_loop):
     grid_player.add_dance_loop(new_dance_loop)

@@ -21,11 +21,11 @@ class WebcamInterface():
 
                 self.cap = cv2.VideoCapture(camera_index)
                 self.cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc('M','J','P','G'))
-                self.cap.set(cv2.CAP_PROP_FPS, 30)
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # .25 manual, .75 auto , Who knows why
-                self.cap.set(cv2.CAP_PROP_EXPOSURE, 0.015501550155015502)
+                # self.cap.set(cv2.CAP_PROP_FPS, 30)
+                # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                # self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # .25 manual, .75 auto , Who knows why
+                # self.cap.set(cv2.CAP_PROP_EXPOSURE, 0.015501550155015502)
                 
                 ret,frame = self.cap.read()
                 

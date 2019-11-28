@@ -9,13 +9,12 @@ from danceloop import DanceLoop
 
 class GridPlayer():
 
-    def __init__(self,frame_size,grid_size,frames_per_loop):
+    def __init__(self,frame_size,grid_size):
         #sizes are in width and height
 
         self.frame_w, self.frame_h = frame_size
 
         self.grid_w, self.grid_h = grid_size
-        self.frames_per_loop = frames_per_loop
         self.view_w = self.frame_w // self.grid_w
         self.view_h = self.frame_h // self.grid_h
 
@@ -33,14 +32,6 @@ class GridPlayer():
 
     def get_frame(self):
 
-        l = self.frames_per_loop*2
-        loop_i = min(self.frame_count % l, l - (self.frame_count % l)-1)
-
-        loop_ratio = loop_i / self.frames_per_loop
-
-        self.frame_count += 1
-
-
         frame = np.zeros((self.frame_h,self.frame_w,3),dtype="uint8")
 
         for i in range(self.grid_h):
@@ -52,7 +43,7 @@ class GridPlayer():
 
                 li = self.grid_length - (i*self.grid_w + j) -1
 
-                frame[i1:i2,j1:j2,:] = self.dance_loop_deque[li].get_frame(loop_ratio, width=self.view_w, height=self.view_h)
+                frame[i1:i2,j1:j2,:] = self.dance_loop_deque[li].get_frame( width=self.view_w, height=self.view_h)
 
         for i in range(self.grid_h):
             y = i * self.view_h
