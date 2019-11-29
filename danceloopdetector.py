@@ -20,6 +20,7 @@ class DanceLoopDetector():
         self.dance_std_threshold = p["dance_std_threshold"]
         self.window_length = p["window_length_frames"]
         self.cooldown_time = p["dance_detection_cooldown_time"]
+        self.pixel_change_threshold = p["pixel_change_threshold"]
 
         self.frame_buffer = deque(maxlen=self.window_length)
 
@@ -50,7 +51,7 @@ class DanceLoopDetector():
             self.last_frame = frame
 
         #calculate the difference between the last two frames
-        diff_frame = np.abs(frame - self.last_frame)
+        diff_frame = np.abs(frame - self.last_frame) > self.pixel_change_threshold
 
         self.last_frame = frame
 
@@ -59,7 +60,7 @@ class DanceLoopDetector():
 
         #calculate the maximum difference possible
         h,w,c = frame.shape
-        max_sum = h*w*c*255
+        max_sum = h*w*c
 
         #calculate the ratio of the amount of change
         diff_ratio = diff_sum / max_sum

@@ -12,8 +12,10 @@ p = {
     "frames_per_second": 30, #fps of the camera
     "window_length_seconds": 5, #seconds
     "dance_correlation_threshold":0.4, #threshold for when to trigger a new dance
+    "pixel_change_threshold":50, #the amount each pixel must change before it is considered to have motion
     "dance_std_threshold":0.0005, 
     "dance_detection_cooldown_time":5, #seconds
+    
 
 }
 #calculate other tempo parameters
